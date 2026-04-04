@@ -10,7 +10,11 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @router.post("/analyze")
-async def analyze_image(file: UploadFile = File(...), use_gemini: bool = True):
+async def analyze_image(
+	file: UploadFile = File(...),
+	use_gemini: bool | None = None,
+	use_clarifai: bool | None = None,
+):
 	# Validate file type
 	if file.content_type not in ALLOWED_TYPES:
 		raise HTTPException(
@@ -32,7 +36,11 @@ async def analyze_image(file: UploadFile = File(...), use_gemini: bool = True):
 		raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
 	try:
-		result = analyze_food_image(image_bytes=image_bytes, use_gemini=use_gemini)
+		result = analyze_food_image(
+			image_bytes=image_bytes,
+			use_gemini=use_gemini,
+			use_clarifai=use_clarifai,
+		)
 	except ValueError as error:
 		raise HTTPException(status_code=400, detail=str(error)) from error
 	except RuntimeError as error:

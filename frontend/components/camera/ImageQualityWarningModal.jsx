@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
+import FeedbackModalShell from '../common/FeedbackModalShell'
 
-export default function ImageQualityWarningModal({ isBlurry, onRetake, onIgnore }) {
+export default function ImageQualityWarningModal({ isBlurry, onRetake, onCancel }) {
 	const overlayRef = useRef(null)
 	const modalRef = useRef(null)
 	const warningIconRef = useRef(null)
@@ -67,16 +68,13 @@ export default function ImageQualityWarningModal({ isBlurry, onRetake, onIgnore 
 	}
 
 	return (
-		<div
-			ref={overlayRef}
-			onClick={(e) => e.target === e.currentTarget && closeModal(onRetake)}
-			className="fixed inset-0 z-[700] flex items-center justify-center bg-white/75 p-4 backdrop-blur-xl"
+		<FeedbackModalShell
+			isOpen={isBlurry}
+			overlayRef={overlayRef}
+			modalRef={modalRef}
+			onBackdropClick={() => closeModal(onCancel)}
+			modalClassName="border-[1.5px] border-[#ffd700]/40 bg-gradient-to-b from-[#fffef0] to-[#fff9e6]"
 		>
-			<div
-				ref={modalRef}
-				onClick={(e) => e.stopPropagation()}
-				className="w-full max-w-[400px] rounded-[22px] border-[1.5px] border-[#ffd700]/40 bg-gradient-to-b from-[#fffef0] to-[#fff9e6] p-[32px] text-center"
-			>
 				<div ref={warningIconRef} className="mb-4 text-6xl">
 					⚠️
 				</div>
@@ -104,15 +102,14 @@ export default function ImageQualityWarningModal({ isBlurry, onRetake, onIgnore 
 					</button>
 
 					<button
-						onClick={() => closeModal(onIgnore)}
+						onClick={() => closeModal(onCancel)}
 						onMouseEnter={(e) => gsap.to(e.target, { scale: 1.06, duration: 0.18 })}
 						onMouseLeave={(e) => gsap.to(e.target, { scale: 1, duration: 0.18 })}
 						className="flex-1 cursor-none rounded-full border-[1.5px] border-[#e8e8e8] bg-transparent px-4 py-2 text-xs uppercase tracking-[0.1em] text-[#999] hover:border-[#ff9f45] hover:text-[#ff9f45] transition-colors"
 					>
-						Continue Anyway
+						Cancel
 					</button>
 				</div>
-			</div>
-		</div>
+		</FeedbackModalShell>
 	)
 }

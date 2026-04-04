@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { detectImageBlur } from '../../utils/imageQuality'
-import ImageQualityWarningModal from './ImageQualityWarningModal'
+import ValidationModals from './ValidationModals'
 
-export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting }) {
+export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting, onValidationFailed }) {
 	const [isBlurry, setIsBlurry] = useState(false)
 	const [isCheckingQuality, setIsCheckingQuality] = useState(false)
 	const overlayRef = useRef(null)
@@ -13,10 +13,7 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 
 	// Detect image quality on mount
 	useEffect(() => {
-		if (!preview) {
-			setIsBlurry(false)
-			return
-		}
+		if (!preview) return
 
 		const checkQuality = async () => {
 			setIsCheckingQuality(true)
@@ -99,17 +96,19 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 		onRetake()
 	}
 
-	const handleIgnoreWarning = () => {
+	const handleCancelFromWarning = () => {
 		setIsBlurry(false)
+		onValidationFailed('Image validation failed: the image appears blurry. Please retake a clearer photo before submitting.')
+		onRetake()
 	}
 
 	return (
 		<>
 			{/* Quality warning */}
-			<ImageQualityWarningModal
+			<ValidationModals
 				isBlurry={isBlurry}
 				onRetake={handleRetakeFromWarning}
-				onIgnore={handleIgnoreWarning}
+				onCancel={handleCancelFromWarning}
 			/>
 
 			{/* Preview modal (hidden if blurry warning is shown) */}
@@ -117,38 +116,38 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 				<div
 					ref={overlayRef}
 					onClick={(e) => e.target === e.currentTarget && closeModal()}
-					className="fixed inset-0 z-[650] flex items-center justify-center bg-white/75 p-4 backdrop-blur-xl"
+					className="fixed inset-0 z-[650] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
 				>
 					<div
 						ref={modalRef}
 						onClick={(e) => e.stopPropagation()}
-						className="w-full max-w-[420px] rounded-[22px] border-[1.5px] border-[#e8e8e8] bg-[var(--surface-card)] p-[28px] text-center"
+						className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col items-center"
 					>
-						<h2 className="text-[20px] font-semibold text-[var(--brand-primary)] font-[var(--font-heading)]">
+						<h2 className="mt-1 text-[20px] font-semibold text-[var(--brand-primary)] font-[var(--font-heading)]">
 							Review Your Image
 						</h2>
 
 						{isCheckingQuality && (
-							<div className="mt-4 text-xs text-[#999]">Checking image quality...</div>
+							<div className="mt-2 text-xs text-[#999]">Checking image quality...</div>
 						)}
 
 						<img
 							ref={imageRef}
 							src={preview.src}
 							alt="Preview"
-							className="mt-4 h-64 w-full rounded-[13px] border border-[#e8e8e8] object-cover"
+							className="mt-3 h-[26rem] w-full rounded-xl border border-gray-200 object-cover"
 						/>
 
-						<p className="mt-3 text-xs text-[#999]">{preview.fileName}</p>
+						<p className="mt-2 text-xs text-[#999]">{preview.fileName}</p>
 
-						<div className="mt-6 flex gap-3">
+						<div className="mt-5 flex w-full justify-center gap-4">
 							<button
 								ref={(el) => (buttonsRef.current[0] = el)}
 								onClick={closeModal}
 								disabled={isSubmitting || isCheckingQuality}
 								onMouseEnter={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1.06, duration: 0.18 })}
 								onMouseLeave={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1, duration: 0.18 })}
-								className="flex-1 cursor-none rounded-full border-[1.5px] border-[#e8e8e8] bg-transparent px-4 py-2 text-xs uppercase tracking-[0.1em] text-[#aaa] hover:border-[#ff6b6b] hover:text-[#ff6b6b] transition-colors disabled:opacity-50"
+								className="flex-1 py-3 px-6 bg-gray-300 text-gray-800 rounded-full text-md font-medium hover:bg-gray-400 transition disabled:opacity-50"
 							>
 								Retake
 							</button>
@@ -159,9 +158,9 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 								disabled={isSubmitting || isCheckingQuality}
 								onMouseEnter={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1.06, duration: 0.18 })}
 								onMouseLeave={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1, duration: 0.18 })}
-								className="flex-1 cursor-none rounded-full border-[1.5px] border-[var(--brand-secondary)] bg-[var(--brand-secondary)] px-4 py-2 text-xs uppercase tracking-[0.1em] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+								className="flex-1 py-3 px-6 bg-orange-400 text-white rounded-full text-md font-medium hover:bg-orange-500 transition disabled:opacity-50"
 							>
-								{isCheckingQuality ? 'Checking...' : isSubmitting ? 'Analyzing...' : 'Submit'}
+								{isCheckingQuality ? 'Checking...' : 'Submit'}
 							</button>
 						</div>
 					</div>

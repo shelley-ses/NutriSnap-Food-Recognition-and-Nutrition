@@ -5,14 +5,23 @@ from app.services.clarifai_service import detect_food_with_clarifai
 from app.services.gemini_service import generate_nutrition_with_gemini
 
 
-def analyze_food_image(image_bytes: bytes, use_gemini: bool = True) -> dict[str, Any]:
+def analyze_food_image(
+	image_bytes: bytes,
+	use_gemini: bool | None = None,
+	use_clarifai: bool | None = None,
+) -> dict[str, Any]:
 	settings = get_settings()
+	effective_use_clarifai = (
+		settings.enable_clarifai if use_clarifai is None else use_clarifai
+	)
+	effective_use_gemini = settings.enable_gemini if use_gemini is None else use_gemini
+
 	clarifai_error: str | None = None
 	clarifai_model_url = settings.clarifai_model_url
 	foods: list[dict[str, Any]] = []
 
-	# Check if Clarifai is enabled
-	if not settings.enable_clarifai:
+	# Check if Clarifai is enabled for this request.
+	if not effective_use_clarifai:
 		clarifai_error = "Clarifai is disabled (ENABLE_CLARIFAI=false)"
 	# Check if Clarifai has credentials
 	elif not settings.clarifai_pat:
@@ -26,7 +35,7 @@ def analyze_food_image(image_bytes: bytes, use_gemini: bool = True) -> dict[str,
 			clarifai_error = str(error)
 
 	gemini_result: dict[str, Any] = {
-		"enabled": bool(use_gemini and settings.gemini_api_key),
+		"enabled": bool(effective_use_gemini and settings.gemini_api_key),
 		"model": None,
 		"insights": None,
 		"identified_foods": [],
@@ -34,11 +43,11 @@ def analyze_food_image(image_bytes: bytes, use_gemini: bool = True) -> dict[str,
 		"error": None,
 	}
 
-	# Check if Gemini is enabled
-	if not settings.enable_gemini:
+	# Check if Gemini is enabled for this request.
+	if not effective_use_gemini:
 		gemini_result["enabled"] = False
-		gemini_result["error"] = "Gemini is disabled (ENABLE_GEMINI=false)"
-	elif use_gemini and settings.gemini_api_key:
+		gemini_result["error"] = "Gemini is disabled"
+	elif settings.gemini_api_key:
 		try:
 			gemini_api_result = generate_nutrition_with_gemini(
 				image_bytes=image_bytes,
@@ -60,24 +69,30 @@ def analyze_food_image(image_bytes: bytes, use_gemini: bool = True) -> dict[str,
 			gemini_result["error"] = str(error)
 		except ValueError as error:
 			gemini_result["error"] = str(error)
-	elif use_gemini and not settings.gemini_api_key:
+	elif not settings.gemini_api_key:
 		gemini_result["error"] = (
-			"GEMINI_API_KEY is missing. Add it to backend/.env and restart the API."
+			"GEMINI_API_KEY is missing."
 		)
 
+	clarifai_ok = not clarifai_error
 	gemini_ok = bool(gemini_result.get("enabled") and not gemini_result.get("error"))
-	if clarifai_error and not gemini_ok:
-		if use_gemini:
+	any_provider_enabled = bool(effective_use_clarifai or effective_use_gemini)
+	if not clarifai_ok and not gemini_ok and any_provider_enabled:
+		if effective_use_clarifai and effective_use_gemini:
 			raise RuntimeError(
 				f"Clarifai failed: {clarifai_error}. Gemini failed: {gemini_result.get('error')}"
 			)
-		raise RuntimeError(f"Clarifai failed: {clarifai_error}")
+		if effective_use_clarifai:
+			raise RuntimeError(f"Clarifai failed: {clarifai_error}")
+		raise RuntimeError(f"Gemini failed: {gemini_result.get('error')}")
 
-	analysis_provider = "clarifai"
-	if clarifai_error and gemini_ok:
-		analysis_provider = "gemini"
-	elif not clarifai_error and gemini_ok:
+	analysis_provider = "none"
+	if clarifai_ok and gemini_ok:
 		analysis_provider = "clarifai+gemini"
+	elif clarifai_ok:
+		analysis_provider = "clarifai"
+	elif gemini_ok:
+		analysis_provider = "gemini"
 
 	return {
 		"analysis_provider": analysis_provider,
@@ -85,8 +100,8 @@ def analyze_food_image(image_bytes: bytes, use_gemini: bool = True) -> dict[str,
 		"gemini_detected_foods": gemini_result.get("identified_foods", []),
 		"clarifai_model_url": clarifai_model_url,
 		"clarifai_error": clarifai_error,
-		"gemini_ready": bool(settings.gemini_api_key),
-		"gemini_used": bool(use_gemini and settings.gemini_api_key),
+		"gemini_ready": bool(effective_use_gemini and settings.gemini_api_key),
+		"gemini_used": bool(effective_use_gemini and settings.gemini_api_key),
 		"gemini": gemini_result,
 		"yolo_ready": False,
 	}

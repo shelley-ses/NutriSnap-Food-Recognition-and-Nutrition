@@ -1,106 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Aclonica&family=Poppins:wght@300;400;500;600;700&family=Unbounded:wght@300;400;500;600;700&display=swap');
+@config '../tailwind.config.js';
 @import 'tailwindcss';
+
+.font-aclonica {
+  font-family: 'Aclonica', sans-serif;
+}
+
+.font-unbounded {
+  font-family: 'Unbounded', sans-serif;
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.primary-text {
+  color: #346E0D; 
+}
+
+.secondary-text {
+  color: #611F11;
+}
+
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-height: 100%;
+  margin: 0;
 }
 
 body {
-  margin: 0;
-  font-family: var(--font-body);
-  background: var(--surface-bg);
-  color: var(--text-main);
-  cursor: none;
-  overflow-x: hidden;
+  font-family: 'Unbounded', sans-serif;
+  margin: 50px;
+  background-color: #ffffff;
 }
 
-.page-bg-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+.background2 {
+  margin: -50px;
+  min-height: calc(100vh + 100px);
+  padding: 50px 0;
+  background-image: url('./assets/background.png');
+  background-size: 100% auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
-.dot-grid {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle, #d0d0d0 1px, transparent 1px);
-  background-size: 26px 26px;
-  opacity: 0.4;
-}
-
-.cursor-dot,
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-}
-
-.cursor-dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 9999px;
-  background: var(--brand-primary);
-  z-index: 9999;
-  mix-blend-mode: multiply;
-}
-
-.cursor-ring {
-  width: 34px;
-  height: 34px;
-  border-radius: 9999px;
-  border: 1.5px solid var(--brand-primary);
-  opacity: 0.5;
-  z-index: 9998;
-}
-
-.card-glare {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 10;
-  mix-blend-mode: screen;
-}
-
-.icon-dot-ring {
-  border: 3px dotted #d6d6d6;
-  opacity: 0.78;
-  pointer-events: none;
-}
-
-.camera-main-title {
-  font-family: 'Bebas Neue', cursive;
-  font-weight: 400;
-}
-
-.food-particle {
-  position: fixed;
-  pointer-events: none;
-  z-index: 1;
-  font-size: 20px;
-  opacity: 0;
-}
-
-@media (pointer: coarse) {
+@media (max-width: 1024px) {
   body {
-    cursor: auto;
+    margin: 24px;
   }
 
-  .cursor-dot,
-  .cursor-ring {
-    display: none;
+  .background2 {
+    margin: -24px;
+    min-height: calc(100vh + 48px);
+    padding: 24px 0;
+    background-size: cover;
+    background-attachment: scroll;
   }
 }

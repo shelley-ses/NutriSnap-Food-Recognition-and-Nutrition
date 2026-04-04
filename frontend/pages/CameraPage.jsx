@@ -1,158 +1,134 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import CaptureFood from '../components/camera/CaptureFood'
 import UploadImage from '../components/camera/UploadImage'
-import ImageAnalysis from '../components/camera/ImageAnalysis'
-import ValidationErrorModal from '../components/camera/ValidationErrorModal'
+import CameraModal from '../components/camera/CameraModal'
 import PreviewModal from '../components/camera/PreviewModal'
-import AnalyzingModal from '../components/camera/AnalyzingModal'
+import ValidationModals from '../components/camera/ValidationModals'
+import AnalysisResultModal from '../components/camera/AnalysisResultModal'
+import AnalyzingScreen from '../components/camera/AnalyzingScreen'
+
 import { useCamera } from '../hooks/useCamera'
 import { useUploadFlow } from '../hooks/useUploadFlow'
-import {
-  runCameraPageEntrance,
-  setupCustomCursor,
-  setupParticleBackground,
-  startFloatingFoodParticles,
-} from '../components/common/motion'
 
-export default function CameraPage() {
-  const pageRef = useRef(null)
-  const canvasRef = useRef(null)
-  const cursorDotRef = useRef(null)
-  const cursorRingRef = useRef(null)
-  const logoRef = useRef(null)
-  const subtitleRef = useRef(null)
-  const dotsRowRef = useRef(null)
-  const dividerRef = useRef(null)
-  const footerRef = useRef(null)
-
-  const {
-    isCameraOpen,
-    captureStatus,
-    preview,
-    streamRef,
-    openCamera,
-    closeCamera,
-    capturePhoto,
-    clearPreview,
-  } = useCamera()
-
+export default function CameraPage ()
+{
+  const videoRef = useRef (null) // live camera for the capture food
+  const {streamRef, isCameraOpen, openCamera, closeCamera}= useCamera ()
   const {
     fileInputRef,
-    validationError,
     previewData,
+    validationError,
     isAnalyzing,
     analysisResult,
     handleFileChange,
     handleRetake,
     handleSubmit,
-    openFilePicker,
-    setValidationError,
-    setAnalysisResult,
+    processFile,
     reset,
+    setValidationError,
   } = useUploadFlow()
 
-  useEffect(() => {
-    return setupCustomCursor({
-      dotElement: cursorDotRef.current,
-      ringElement: cursorRingRef.current,
-    })
-  }, [])
+  const handleCameraCapture = useCallback(() => {
+    const videoElement = videoRef.current
 
-  useEffect(() => {
-    return setupParticleBackground({ canvas: canvasRef.current })
-  }, [])
+    if (!videoElement || videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+      setValidationError('Camera is not ready yet. Please wait a moment and try again.')
+      return
+    }
 
-  useEffect(() => {
-    return runCameraPageEntrance({
-      scopeElement: pageRef.current,
-      logoElement: logoRef.current,
-      subtitleElement: subtitleRef.current,
-      dotsRowElement: dotsRowRef.current,
-      dividerElement: dividerRef.current,
-      footerElement: footerRef.current,
-    })
-  }, [])
+    const canvas = document.createElement('canvas')
+    canvas.width = videoElement.videoWidth
+    canvas.height = videoElement.videoHeight
 
-  useEffect(() => {
-    return startFloatingFoodParticles({ root: document.body })
-  }, [])
+    const context = canvas.getContext('2d')
+    if (!context) {
+      setValidationError('Unable to capture the camera image.')
+      return
+    }
+
+    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setValidationError('Unable to capture the camera image.')
+        return
+      }
+
+      const capturedFile = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' })
+      processFile(capturedFile)
+      closeCamera()
+    }, 'image/jpeg', 0.92)
+  }, [closeCamera, processFile, setValidationError])
+
+  const handleValidationClose = useCallback(() => {
+    setValidationError(null)
+  }, [setValidationError])
+
+  const handleAnalysisClose = useCallback(() => {
+    reset()
+  }, [reset])
+
+  const handleAnalyzeAnother = useCallback(() => {
+    reset()
+    fileInputRef.current?.click()
+  }, [fileInputRef, reset])
+
+
+  // Display the camera
+  useEffect (() => {
+    if (videoRef.current && streamRef.current){
+        videoRef.current.srcObject = streamRef.current
+    }}, [isCameraOpen, streamRef])
+
+    if (isAnalyzing){
+        return <AnalyzingScreen />
+      }
 
   return (
-    <main ref={pageRef} className="relative min-h-screen overflow-hidden bg-[var(--surface-bg)]">
-      <canvas ref={canvasRef} className="page-bg-canvas" />
-      <div className="dot-grid" />
-
-      <div ref={cursorDotRef} className="cursor-dot" />
-      <div ref={cursorRingRef} className="cursor-ring" />
-
-      <div className="relative z-[2] flex min-h-screen flex-col items-center justify-center px-5 py-8">
-        <h1
-          ref={logoRef}
-          className="camera-main-title text-center text-[clamp(44px,7vw,90px)] leading-[0.9] tracking-[0.04em] font-[var(--font-heading)] opacity-0"
-        >
-          <span className="camera-title-letter inline-block text-[var(--brand-primary)]">F</span>
-          <span className="camera-title-letter inline-block text-[var(--brand-secondary)]">o</span>
-          <span className="camera-title-letter inline-block text-[var(--brand-danger)]">o</span>
-          <span className="camera-title-letter inline-block text-[var(--brand-highlight)]">d</span>
-          <span className="camera-title-letter inline-block text-[var(--text-main)]">Lens</span>
-        </h1>
-
-        <p
-          ref={subtitleRef}
-          className="mt-2 text-center text-xs uppercase tracking-[0.32em] text-[#aaaaaa] opacity-0"
-        >
-          AI-Powered Food Recognition
-        </p>
-
-        <div ref={dotsRowRef} className="mt-[13px] flex gap-[7px] opacity-0">
-          <span className="h-2 w-2 rounded-full bg-[var(--brand-primary)]" />
-          <span className="h-2 w-2 rounded-full bg-[var(--brand-secondary)]" />
-          <span className="h-2 w-2 rounded-full bg-[var(--brand-danger)]" />
-          <span className="h-2 w-2 rounded-full bg-[var(--brand-highlight)]" />
-        </div>
-
-        <div
-          ref={dividerRef}
-          className="mx-auto mt-[22px] h-0 w-px bg-gradient-to-b from-transparent via-[var(--brand-primary)] to-transparent opacity-0"
-        />
-
-        <div className="mt-7 flex flex-wrap justify-center gap-5 [perspective:1200px]">
-          <div className="card-shell w-[min(34vw,320px)] min-w-[240px]">
-            <CaptureFood
-              status={captureStatus}
-              isCameraOpen={isCameraOpen}
-              streamRef={streamRef}
-              onOpenCamera={openCamera}
-              onCloseCamera={closeCamera}
-              onCapturePhoto={capturePhoto}
-            />
+    <>
+      <div className="background2 w-full flex flex-col justify-center items-center px-4">
+        <div className="w-full max-w-275 flex flex-col items-center">
+          <div className="text-center">
+            <h1 className="primary-text font-aclonica text-5xl">Snap your Meal</h1>
+            <p className="text-xl">Get instant nutrition info for every meal</p>
           </div>
 
-          <div className="card-shell w-[min(34vw,320px)] min-w-[240px]">
-            <UploadImage
-              fileInputRef={fileInputRef}
-              onTriggerUpload={openFilePicker}
-              onFileChange={handleFileChange}
-            />
+          <div className="pt-15 w-full flex flex-wrap justify-center gap-6">
+            <CaptureFood onOpenCamera = {openCamera} />
+            <UploadImage fileInputRef={fileInputRef} onFileChange={handleFileChange} />
           </div>
-        </div>
-
-        <p
-          ref={footerRef}
-          className="mt-9 text-center text-[11px] uppercase tracking-[0.28em] text-[#cccccc] opacity-0"
-        >
-          Powered by Computer Vision · Zero Data Stored
-        </p>
+        </div> 
       </div>
 
-      {/* Camera Preview Modal (from capture) */}
-      <ImageAnalysis preview={preview} onClose={clearPreview} />
+      {/*Open Camera Modal*/} 
+      {isCameraOpen && (
+        <CameraModal
+          videoRef={videoRef}
+          onClose={closeCamera}
+          onConfirm={handleCameraCapture}
+        />
+      )}
 
-      {/* File Upload Modals */}
-      <ValidationErrorModal error={validationError} onClose={() => setValidationError(null)} />
-      <PreviewModal preview={previewData} onRetake={handleRetake} onSubmit={handleSubmit} isSubmitting={isAnalyzing} />
-      <AnalyzingModal isOpen={isAnalyzing} />
-      <ImageAnalysis preview={analysisResult} onClose={() => setAnalysisResult(null)} />
-    </main>
-  )
+      <PreviewModal
+        preview={previewData}
+        onRetake={handleRetake}
+        onSubmit={handleSubmit}
+        isSubmitting={isAnalyzing}
+        onValidationFailed={setValidationError}
+      />
+
+      <ValidationModals
+        error={validationError}
+        onClose={handleValidationClose}
+      />
+
+
+      <AnalysisResultModal
+        result={analysisResult}
+        onAnalyzeAnother={handleAnalyzeAnother}
+        onClose={handleAnalysisClose}
+      />
+      
+    </>
+  );
 }

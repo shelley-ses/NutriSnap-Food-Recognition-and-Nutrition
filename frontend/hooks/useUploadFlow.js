@@ -1,7 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
+import { analyzeImage } from '../services/api'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+
+{/*VALIDATION RULES	
+	- Is the file selected?
+	- Is the file type allowed?
+	- Is the file size under 10mb?	
+*/}
 
 export function useUploadFlow() {
 	const fileInputRef = useRef(null)
@@ -37,24 +44,22 @@ export function useUploadFlow() {
 		return { valid: true }
 	}, [])
 
-	// Handle file selection - show preview instead of immediate analysis
-	const handleFileChange = useCallback(
-		(event) => {
-			const file = event.target.files?.[0]
-
+	const processFile = useCallback(
+		(file) => {
 			if (!file) {
 				return
 			}
 
-			// Validate
+			setValidationError(null)
+			setAnalysisResult(null)
 			const validation = validateFile(file)
 			if (!validation.valid) {
+				setPreviewData(null)
 				setValidationError(validation.error)
-				event.target.value = ''
 				return
 			}
 
-			// Show preview
+			// Convert the file into a previewable format
 			const reader = new FileReader()
 			reader.onload = (loadEvent) => {
 				setPreviewData({
@@ -65,13 +70,27 @@ export function useUploadFlow() {
 			}
 
 			reader.onerror = () => {
+				setPreviewData(null)
 				setValidationError('Unable to read this file')
-				event.target.value = ''
 			}
 
 			reader.readAsDataURL(file)
 		},
 		[validateFile],
+	)
+
+	// Handle file selection and passes it to the processFile
+	const handleFileChange = useCallback(
+		(event) => {
+			const file = event.target.files?.[0]
+			if (!file) {
+				return
+			}
+
+			processFile(file)
+			event.target.value = ''
+		},
+		[processFile],
 	)
 
 	// Handle retake - clear preview and allow re-picking
@@ -90,34 +109,27 @@ export function useUploadFlow() {
 			return
 		}
 
+		const validation = validateFile(previewData.file)
+		if (!validation.valid) {
+			setPreviewData(null)
+			setValidationError(validation.error)
+			return
+		}
+
 		setIsAnalyzing(true)
 		setValidationError(null)
 
 		try {
-			const formData = new FormData()
-			formData.append('file', previewData.file)
-			formData.append('use_gemini', 'true')
-
-			const response = await fetch('http://localhost:8000/camera/analyze', {
-				method: 'POST',
-				body: formData,
+			const analysisResponse = await analyzeImage(previewData.file, {
+				useGemini: true,
 			})
 
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-				const errorMessage = errorData.detail || `Analysis failed (${response.status})`
-
-				setAnalysisResult({
-					type: 'error',
-					title: 'Analysis Error',
-					description: previewData.fileName,
-					error: errorMessage,
-				})
-				setIsAnalyzing(false)
+			if (!analysisResponse.ok) {
+				setValidationError(analysisResponse.error)
 				return
 			}
 
-			const analysisResult = await response.json()
+			const analysisResult = analysisResponse.data
 
 			// Parse Gemini insights
 			const geminiInsights = analysisResult.gemini?.insights
@@ -178,16 +190,11 @@ export function useUploadFlow() {
 			setPreviewData(null)
 		} catch (error) {
 			console.error('Analysis error:', error)
-			setAnalysisResult({
-				type: 'error',
-				title: 'Connection Error',
-				description: previewData.fileName,
-				error: 'Unable to connect to analysis server. Please try again.',
-			})
+			setValidationError('Unable to connect to the backend. Please make sure the API is running and try again.')
 		} finally {
 			setIsAnalyzing(false)
 		}
-	}, [previewData])
+	}, [previewData, validateFile])
 
 	// Clear all states
 	const reset = useCallback(() => {
@@ -214,6 +221,7 @@ export function useUploadFlow() {
 		handleRetake,
 		handleSubmit,
 		openFilePicker,
+		processFile,
 		setValidationError,
 		setAnalysisResult,
 		reset,
