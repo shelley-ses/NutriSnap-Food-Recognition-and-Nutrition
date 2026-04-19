@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Camera
 from app.routes.camera import router as camera_router
+from app.routes.spoonacular import router as spoonacular_router
 
 app = FastAPI()
 
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(camera_router)
+app.include_router(spoonacular_router)
 
 @app.get("/")
 async def main():

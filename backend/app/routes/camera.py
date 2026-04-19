@@ -14,6 +14,7 @@ async def analyze_image(
 	file: UploadFile = File(...),
 	use_gemini: bool | None = None,
 	use_clarifai: bool | None = None,
+	filipino_context: bool | None = None,
 ):
 	# Validate file type
 	if file.content_type not in ALLOWED_TYPES:
@@ -40,6 +41,7 @@ async def analyze_image(
 			image_bytes=image_bytes,
 			use_gemini=use_gemini,
 			use_clarifai=use_clarifai,
+			filipino_context=filipino_context,
 		)
 	except ValueError as error:
 		raise HTTPException(status_code=400, detail=str(error)) from error

@@ -51,3 +51,30 @@ export async function analyzeImage(file, useGemini = true) {
 		data: await response.json(),
 	}
 }
+
+export async function guessNutritionWithSpoonacular(query) {
+	const trimmedQuery = typeof query === 'string' ? query.trim() : ''
+	if (!trimmedQuery) {
+		return {
+			ok: false,
+			error: 'Query is required',
+			status: 400,
+		}
+	}
+
+	const endpoint = `${API_BASE_URL}/nutrition/guess?query=${encodeURIComponent(trimmedQuery)}`
+	const response = await fetch(endpoint)
+
+	if (!response.ok) {
+		return {
+			ok: false,
+			error: await parseErrorResponse(response),
+			status: response.status,
+		}
+	}
+
+	return {
+		ok: true,
+		data: await response.json(),
+	}
+}

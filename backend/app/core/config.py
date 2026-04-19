@@ -26,9 +26,15 @@ def _load_env_file() -> None:
 class Settings:
     clarifai_pat: str
     clarifai_model_url: str
+    roboflow_api_key: str
+    roboflow_model_1: str
+    roboflow_model_2: str
     gemini_api_key: str
+    spoonacular_api_key: str
     enable_clarifai: bool
+    enable_roboflow: bool
     enable_gemini: bool
+    enable_spoonacular: bool
 
 
 @lru_cache
@@ -41,7 +47,13 @@ def get_settings() -> Settings:
             "CLARIFAI_MODEL_URL",
             "https://clarifai.com/clarifai/main/models/food-item-recognition",
         ).strip(),
+        roboflow_api_key=os.getenv("ROBOFLOW_API_KEY", "").strip(),
+        roboflow_model_1=os.getenv("ROBOFLOW_MODEL_1", "").strip(),
+        roboflow_model_2=os.getenv("ROBOFLOW_MODEL_2", "").strip(),
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
+        spoonacular_api_key=os.getenv("SPOONACULAR_API_KEY", "").strip(),
         enable_clarifai=os.getenv("ENABLE_CLARIFAI", "true").lower() in ("true", "1", "yes"),
+        enable_roboflow=os.getenv("ENABLE_ROBOFLOW", "true").lower() in ("true", "1", "yes"),
         enable_gemini=os.getenv("ENABLE_GEMINI", "true").lower() in ("true", "1", "yes"),
+        enable_spoonacular=os.getenv("ENABLE_SPOONACULAR", "false").lower() in ("true", "1", "yes"),
     )
