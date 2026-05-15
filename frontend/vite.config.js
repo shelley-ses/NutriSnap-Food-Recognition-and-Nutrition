@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Treat .glb files as static assets so they can be imported from src/
+  assetsInclude: ['**/*.glb'],
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] }),

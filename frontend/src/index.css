@@ -37,6 +37,10 @@ body {
   background-color: #ffffff;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .background2 {
   min-height: 100vh;
   padding: 50px;
