@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, OrbitControls, Html } from '@react-three/drei'
+import { Center, Environment, Html, OrbitControls, useGLTF } from '@react-three/drei'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import * as THREE from 'three'
@@ -12,15 +12,15 @@ function Model({ url, modelRef }) {
 
   useEffect(() => {
     if (!scene) return
-    const box = new THREE.Box3().setFromObject(scene)
-    const center = box.getCenter(new THREE.Vector3())
-    scene.position.sub(center)
-    scene.rotation.x = -Math.PI / 2
-    scene.rotation.y = 0
-    scene.scale.setScalar(2.2)
   }, [scene])
 
-  return <primitive ref={modelRef} object={scene} />
+  return (
+    <Center>
+      <group ref={modelRef} rotation={[0, Math.PI / 6, 0]} scale={2.2}>
+        <primitive object={scene} />
+      </group>
+    </Center>
+  )
 }
 
 function SceneInner({ modelPath }) {
@@ -93,7 +93,7 @@ function SceneInner({ modelPath }) {
 
       const targetRotY = Math.PI * 1.2 * t
       modelRef.current.rotation.y = THREE.MathUtils.lerp(modelRef.current.rotation.y, targetRotY, 0.12)
-      modelRef.current.rotation.x = THREE.MathUtils.lerp(modelRef.current.rotation.x, 0, 0.12)
+      modelRef.current.rotation.x = THREE.MathUtils.lerp(modelRef.current.rotation.x, -0.08, 0.12)
     }
 
     const targetCam = new THREE.Vector3()
@@ -105,11 +105,14 @@ function SceneInner({ modelPath }) {
 
   return (
     <>
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <ambientLight intensity={1.5} />
+      <hemisphereLight intensity={1.1} groundColor="#6b4f2a" color="#ffffff" />
+      <directionalLight position={[5, 5, 5]} intensity={2} />
+      <directionalLight position={[-4, 2, -2]} intensity={0.8} />
       <Suspense fallback={<Html center>Loading model…</Html>}>
         <Model url={modelPath} modelRef={modelRef} />
       </Suspense>
+      <Environment preset="city" />
     </>
   )
 }
@@ -117,7 +120,12 @@ function SceneInner({ modelPath }) {
 export default function HeroThreeScene({ modelPath = '/models/food/fish.glb' }) {
   return (
     <div id="hero" style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 0, 2.2], fov: 45 }} style={{ background: 'transparent', position: 'relative', zIndex: 0 }}>
+      <Canvas
+        camera={{ position: [0, 0.8, 3.8], fov: 42 }}
+        dpr={[1, 1.5]}
+        gl={{ alpha: true, antialias: false, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false, preserveDrawingBuffer: true }}
+        style={{ background: 'transparent', position: 'relative', zIndex: 0 }}
+      >
         <SceneInner modelPath={modelPath} />
         <OrbitControls enableZoom={false} enablePan={false} enableRotate={false} />
       </Canvas>

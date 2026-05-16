@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import HeroThreeScene from '../components/HeroThreeScene'
 import Features from '../components/Features'
 import sammichUrl from '../src/components/sammich.glb'
@@ -6,6 +7,7 @@ import landingBackground from '../src/assets/landingBackground.png'
 import useLenis from '../hooks/useLenis'
 
 export default function LandingPage() {
+  const navigate = useNavigate()
   useLenis()
   return (
     <div style={{ fontFamily: "'Unbounded', sans-serif", background: '#2d5a27', margin: 0, padding: 0 }}>
@@ -130,6 +132,7 @@ export default function LandingPage() {
             }}
           >
             <button
+              onClick={() => navigate('/login')}
               style={{
                 background: 'linear-gradient(135deg, #ffffff 0%, #e9ffdf 100%)',
                 border: 'none',

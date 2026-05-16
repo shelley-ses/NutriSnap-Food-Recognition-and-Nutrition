@@ -24,6 +24,15 @@ def _load_env_file() -> None:
 
 @dataclass(frozen=True)
 class Settings:
+    database_url: str
+    jwt_secret_key: str
+    jwt_algorithm: str
+    access_token_expire_minutes: int
+    otp_pepper: str
+    smtp_host: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
     clarifai_pat: str
     clarifai_model_url: str
     roboflow_api_key: str
@@ -42,6 +51,15 @@ def get_settings() -> Settings:
     _load_env_file()
 
     return Settings(
+        database_url=os.getenv("DATABASE_URL", "").strip(),
+        jwt_secret_key=os.getenv("JWT_SECRET_KEY", "change-me-in-production").strip(),
+        jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256").strip(),
+        access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440")),
+        otp_pepper=os.getenv("OTP_PEPPER", "nutrisnap-otp-pepper").strip(),
+        smtp_host=os.getenv("SMTP_HOST", "").strip(),
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        smtp_user=os.getenv("SMTP_USER", "").strip(),
+        smtp_password=os.getenv("SMTP_PASSWORD", "").strip(),
         clarifai_pat=os.getenv("CLARIFAI_PAT", "").strip(),
         clarifai_model_url=os.getenv(
             "CLARIFAI_MODEL_URL",
