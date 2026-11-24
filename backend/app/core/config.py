@@ -40,6 +40,7 @@ class Settings:
     roboflow_model_2: str
     gemini_api_key: str
     spoonacular_api_key: str
+    yolo_model_path: str
     enable_clarifai: bool
     enable_roboflow: bool
     enable_gemini: bool
@@ -70,6 +71,7 @@ def get_settings() -> Settings:
         roboflow_model_2=os.getenv("ROBOFLOW_MODEL_2", "").strip(),
         gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
         spoonacular_api_key=os.getenv("SPOONACULAR_API_KEY", "").strip(),
+        yolo_model_path=os.getenv("YOLO_MODEL_PATH", "yolo11n.pt").strip(),
         enable_clarifai=os.getenv("ENABLE_CLARIFAI", "true").lower() in ("true", "1", "yes"),
         enable_roboflow=os.getenv("ENABLE_ROBOFLOW", "true").lower() in ("true", "1", "yes"),
         enable_gemini=os.getenv("ENABLE_GEMINI", "true").lower() in ("true", "1", "yes"),

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { loginUser } from "../src/services/auth";
+import OTPModal from "../components/common/StatusModal";
+import ForgotPasswordModal from "../components/common/ForgotPasswordModal";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,21 +13,14 @@ export default function Login() {
   const [focused, setFocused] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [checked, setChecked] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   useEffect(() => {
-    // Load Lottie web component script
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.14/dist/dotlottie-wc.js";
-    script.type = "module";
-    document.head.appendChild(script);
-    setTimeout(() => setLoaded(true), 100);
-    return () => document.head.removeChild(script);
-  }, []);
-
-  useEffect(() => {
+    // Form fade-in on mount
+    setLoaded(true);
     if (location.state?.email) {
       setEmail(location.state.email);
     }
@@ -42,12 +37,16 @@ export default function Login() {
 
     try {
       const response = await loginUser({ email, password });
-      if (response.access_token) {
-        localStorage.setItem("nutrisnap_token", response.access_token);
-        navigate("/camera");
+      if (response.user) {
+        localStorage.setItem("nutrisnap_logged_in", "true");
+        navigate("/daily-log");
       }
     } catch (submitError) {
-      setError(submitError.message || "Unable to sign in.");
+      const msg = submitError.message || "Unable to sign in.";
+      setError(msg);
+      if (msg.toLowerCase().includes("not verified")) {
+        setOtpModalOpen(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -64,8 +63,6 @@ export default function Login() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,600&family=Bebas+Neue&display=swap');
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         .left-panel {
@@ -280,36 +277,10 @@ export default function Login() {
 
         .row-options {
           display: flex;
-          justify-content: space-between;
+          justify-content: flex-end;
           align-items: center;
           margin-bottom: 28px;
           margin-top: 4px;
-        }
-
-        .remember-wrap {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-        }
-
-        .custom-checkbox {
-          width: 18px;
-          height: 18px;
-          border: 1.5px solid #c4c0b4;
-          border-radius: 5px;
-          background: ${checked ? '#4a7c2f' : '#fff'};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-          cursor: pointer;
-          border-color: ${checked ? '#4a7c2f' : '#c4c0b4'};
-        }
-
-        .remember-label {
-          font-size: 13px;
-          color: #6b7280;
         }
 
         .forgot-link {
@@ -458,9 +429,7 @@ export default function Login() {
           />
         </div>
 
-        <div className="left-footer">
-          Track your meals, <strong>discover nutrition</strong>, and reach your <strong>health goals.</strong>
-        </div>      </div>
+      </div>
 
       {/* RIGHT PANEL */}
       <div className="right-panel">
@@ -471,9 +440,8 @@ export default function Login() {
           <h1 className="form-title">
             Sign into your<br /><em>NutriSnap</em> account
           </h1>
-          <p className="form-subtitle">
-            Track your meals, snap your food, and gain instant nutritional insights.
-          </p>
+          <p className="form-subtitle">Sign in to continue.</p>
+
 
           {notice && (
             <div style={{ marginBottom: "16px", color: "#4a7c2f", fontSize: "13px" }}>
@@ -538,20 +506,7 @@ export default function Login() {
 
             {/* Options row */}
             <div className="row-options">
-              <div
-                className="remember-wrap"
-                onClick={() => setChecked(!checked)}
-              >
-                <div className="custom-checkbox">
-                  {checked && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-                <span className="remember-label">Remember me</span>
-              </div>
-              <a className="forgot-link">Forgot password?</a>
+              <a className="forgot-link" onClick={() => setForgotPasswordOpen(true)}>Forgot password?</a>
             </div>
 
             {/* Submit */}
@@ -571,23 +526,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="divider">
-            <div className="divider-line" />
-            <span className="divider-text">OR</span>
-            <div className="divider-line" />
-          </div>
-
-          {/* Google */}
-          <button className="google-btn">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-              <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/>
-            </svg>
-            Continue with Google
-          </button>
 
           <div className="signup-row">
             Don't have an account?{" "}
@@ -595,6 +533,27 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      <OTPModal
+        isOpen={otpModalOpen}
+        email={email}
+        onVerified={() => {
+          setOtpModalOpen(false);
+          setNotice("Account verified! You can now log in.");
+          setError("");
+        }}
+        onClose={() => setOtpModalOpen(false)}
+      />
+
+      <ForgotPasswordModal
+        isOpen={forgotPasswordOpen}
+        onClose={() => setForgotPasswordOpen(false)}
+        onResetSuccess={(resetEmail) => {
+          setEmail(resetEmail);
+          setNotice("Your password has been reset successfully. Please sign in with your new password.");
+          setError("");
+        }}
+      />
     </div>
   );
 }

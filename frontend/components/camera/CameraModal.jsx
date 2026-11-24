@@ -1,7 +1,7 @@
 export default function CameraModal({ videoRef, onClose, onConfirm }) {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-black/40"
+      className="fixed inset-0 flex items-center justify-center z-[1000] backdrop-blur-sm bg-black/40"
       onClick={onClose} 
     >
       <div
@@ -27,7 +27,7 @@ export default function CameraModal({ videoRef, onClose, onConfirm }) {
 
           <button
             onClick={onConfirm}
-            className="flex-1 py-3 px-6 bg-orange-400 text-white rounded-full text-md font-medium hover:bg-orange-500 transition"
+            className="flex-1 py-3 px-6 bg-[var(--app-color-primary-dark)] text-white rounded-full text-md font-medium hover:bg-[var(--app-color-primary)] transition"
           >
             Capture
           </button>

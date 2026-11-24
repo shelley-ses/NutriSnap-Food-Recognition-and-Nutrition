@@ -79,3 +79,69 @@ export function detectImageBlur(imageSrc) {
 		img.src = imageSrc
 	})
 }
+
+/**
+ * Compresses and resizes an image file.
+ * @param {File} file - The original image file.
+ * @param {number} maxWidth - Maximum allowed width.
+ * @param {number} maxHeight - Maximum allowed height.
+ * @param {number} quality - Quality level (0.0 to 1.0).
+ * @returns {Promise<File>} - A promise that resolves to the compressed File object.
+ */
+export function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.75) {
+	return new Promise((resolve) => {
+		const reader = new FileReader()
+		reader.readAsDataURL(file)
+		reader.onload = (event) => {
+			const img = new Image()
+			img.src = event.target?.result
+			img.onload = () => {
+				const canvas = document.createElement('canvas')
+				let width = img.width
+				let height = img.height
+
+				if (width > height) {
+					if (width > maxWidth) {
+						height = Math.round((height * maxWidth) / width)
+						width = maxWidth
+					}
+				} else {
+					if (height > maxHeight) {
+						width = Math.round((width * maxHeight) / height)
+						height = maxHeight
+					}
+				}
+
+				canvas.width = width
+				canvas.height = height
+
+				const ctx = canvas.getContext('2d')
+				if (!ctx) {
+					resolve(file)
+					return
+				}
+
+				ctx.drawImage(img, 0, 0, width, height)
+
+				canvas.toBlob(
+					(blob) => {
+						if (!blob) {
+							resolve(file)
+							return
+						}
+						const compressedFile = new File([blob], file.name, {
+							type: 'image/jpeg',
+							lastModified: Date.now(),
+						})
+						resolve(compressedFile)
+					},
+					'image/jpeg',
+					quality
+				)
+			}
+			img.onerror = () => resolve(file)
+		}
+		reader.onerror = () => resolve(file)
+	})
+}
+

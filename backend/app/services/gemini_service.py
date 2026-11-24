@@ -117,10 +117,15 @@ def _build_prompt(foods: list[dict[str, Any]]) -> str:
 		'    "carbs_g": number,\n'
 		'    "fat_g": number\n'
 		"  },\n"
+		'  "portion_size": {\n'
+		'    "text": "string",\n'
+		'    "grams": number\n'
+		"  },\n"
 		'  "portion_note": "string",\n'
 		'  "confidence_note": "string"\n'
 		"}\n"
-		"If uncertain, still provide best-effort estimates and explain uncertainty in confidence_note."
+		"If uncertain, still provide best-effort estimates and explain uncertainty in confidence_note. "
+		"When possible, infer the serving/portion size in grams and include it in portion_size."
 	)
 
 
@@ -229,6 +234,11 @@ def _request_gemini_with_retry(
 			_try_models(discovered_models)
 
 	if selected_model is None or response_data is None:
+		if any("deploy" in message.lower() for message in model_errors):
+			raise RuntimeError(
+				"Gemini model is still deploying. Wait a few minutes and try again, or set GEMINI_MODEL to a ready model in backend/.env."
+			)
+
 		error_summary = " | ".join(model_errors) if model_errors else "no model attempts"
 		raise RuntimeError(
 			"Gemini request failed for all candidate models. "
@@ -473,3 +483,6 @@ def generate_nutrition_with_gemini(
 		"identified_foods": identified_foods,
 		"raw_text": raw_text,
 	}
+
+
+

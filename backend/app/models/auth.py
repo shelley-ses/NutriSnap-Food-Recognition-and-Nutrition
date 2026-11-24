@@ -16,7 +16,10 @@ class User(Base):
     birthday: Mapped[str | None] = mapped_column(String(20), nullable=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
 
 
 class OtpCode(Base):

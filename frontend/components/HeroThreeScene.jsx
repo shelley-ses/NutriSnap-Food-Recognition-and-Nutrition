@@ -105,14 +105,14 @@ function SceneInner({ modelPath }) {
 
   return (
     <>
-      <ambientLight intensity={1.5} />
-      <hemisphereLight intensity={1.1} groundColor="#6b4f2a" color="#ffffff" />
-      <directionalLight position={[5, 5, 5]} intensity={2} />
-      <directionalLight position={[-4, 2, -2]} intensity={0.8} />
+      <ambientLight intensity={0.75} />
+      <hemisphereLight intensity={0.55} groundColor="#6b4f2a" color="#ffffff" />
+      <directionalLight position={[5, 5, 5]} intensity={1.15} />
+      <directionalLight position={[-4, 2, -2]} intensity={0.45} />
       <Suspense fallback={<Html center>Loading model…</Html>}>
         <Model url={modelPath} modelRef={modelRef} />
       </Suspense>
-      <Environment preset="city" />
+      <Environment preset="sunset" />
     </>
   )
 }

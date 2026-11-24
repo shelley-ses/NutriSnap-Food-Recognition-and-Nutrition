@@ -138,7 +138,7 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 							className="mt-3 h-[26rem] w-full rounded-xl border border-gray-200 object-cover"
 						/>
 
-						<p className="mt-2 text-xs text-[#999]">{preview.fileName}</p>
+						<p className="mt-2 mb-4 text-xs text-[#999]">{preview.fileName}</p>
 
 						<div className="mt-5 flex w-full justify-center gap-4">
 							<button
@@ -158,7 +158,7 @@ export default function PreviewModal({ preview, onRetake, onSubmit, isSubmitting
 								disabled={isSubmitting || isCheckingQuality}
 								onMouseEnter={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1.06, duration: 0.18 })}
 								onMouseLeave={(e) => (!isSubmitting && !isCheckingQuality) && gsap.to(e.target, { scale: 1, duration: 0.18 })}
-								className="flex-1 py-3 px-6 bg-orange-400 text-white rounded-full text-md font-medium hover:bg-orange-500 transition disabled:opacity-50"
+								className="flex-1 py-3 px-6 bg-[var(--app-color-primary-dark)] text-white rounded-full text-md font-medium hover:bg-[var(--app-color-primary)] transition disabled:opacity-50"
 							>
 								{isCheckingQuality ? 'Checking...' : 'Submit'}
 							</button>

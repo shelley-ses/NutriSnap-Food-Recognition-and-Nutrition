@@ -3,12 +3,18 @@ import hashlib
 import os
 import random
 
-from jose import jwt
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.database import get_db
+from app.models.auth import User
 
-pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -39,3 +45,41 @@ def hash_otp(otp: str) -> str:
 
 def is_otp_valid(otp: str, otp_hash: str) -> bool:
     return hash_otp(otp) == otp_hash
+
+
+def verify_access_token(token: str) -> str:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return email
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    token = request.cookies.get("nutrisnap_token")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    email = verify_access_token(token)
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
+

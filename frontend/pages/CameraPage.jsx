@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import Navbar from '../components/Navbar'
 import CaptureFood from '../components/camera/CaptureFood'
 import UploadImage from '../components/camera/UploadImage'
 import CameraModal from '../components/camera/CameraModal'
@@ -86,10 +87,14 @@ export default function CameraPage ()
 
   return (
     <>
-      <div className="background2 w-full flex flex-col justify-center items-center px-4">
+      <Navbar />
+      <div className="background2 w-full flex flex-col justify-center items-center px-4 font-poppins">
         <div className="w-full max-w-275 flex flex-col items-center">
           <div className="text-center">
-            <h1 className="primary-text font-aclonica text-5xl">Snap your Meal</h1>
+            <h1 className="primary-text text-6xl font-extrabold tracking-tight overflow-visible pr-6 whitespace-nowrap leading-tight">
+              <span>Snap your </span>
+              <span className="italic meal-gradient meal-gradient-stroke">Meal</span>
+            </h1>
             <p className="text-xl">Get instant nutrition info for every meal</p>
           </div>
 

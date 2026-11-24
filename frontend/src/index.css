@@ -1,6 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Aclonica&family=Poppins:wght@300;400;500;600;700&family=Unbounded:wght@300;400;500;600;700&display=swap');
-@config '../tailwind.config.js';
+@import url('https://fonts.googleapis.com/css2?family=Aclonica&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Unbounded:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
+
+:root {
+  --app-font-display: 'Unbounded', sans-serif;
+  --app-font-body: 'Poppins', sans-serif;
+  --app-color-primary: #7ba367;
+  --app-color-primary-dark: #4b6e3d;
+  --app-color-accent: #9dbd57;
+  --app-color-surface: #f2f7ee;
+  --app-color-ink: #163f22;
+  --app-color-muted: #6f8a63;
+}
 
 .font-aclonica {
   font-family: 'Aclonica', sans-serif;
@@ -14,12 +24,44 @@
   font-family: 'Poppins', sans-serif;
 }
 
+.app-font-display {
+  font-family: var(--app-font-display);
+}
+
+.app-font-body {
+  font-family: var(--app-font-body);
+}
+
+.app-font-alt {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.app-text-primary {
+  color: var(--app-color-primary);
+}
+
+.app-text-primary-dark {
+  color: var(--app-color-primary-dark);
+}
+
+.app-text-muted {
+  color: var(--app-color-muted);
+}
+
+.app-bg-surface {
+  background-color: var(--app-color-surface);
+}
+
+.app-border-primary {
+  border-color: var(--app-color-primary);
+}
+
 .primary-text {
-  color: #346E0D; 
+  color: #163f22;
 }
 
 .secondary-text {
-  color: #611F11;
+  color: #a7c99a;
 }
 
 
@@ -31,10 +73,11 @@
 }
 
 body {
-  font-family: 'Unbounded', sans-serif;
+  font-family: var(--app-font-display);
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: visible;
   background-color: #ffffff;
+  color: var(--app-color-ink);
 }
 
 html {
@@ -44,11 +87,13 @@ html {
 .background2 {
   min-height: 100vh;
   padding: 50px;
-  background-image: url('./assets/background.png');
-  background-size: 100% auto;
+  background-image: radial-gradient(circle at 10% 10%, rgba(16,40,12,0.02) 0, transparent 20%),
+                    radial-gradient(circle at 90% 80%, rgba(16,40,12,0.02) 0, transparent 18%),
+                    linear-gradient(180deg, #f3fbef 0%, #ffffff 65%);
+  background-size: cover, cover, 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-attachment: scroll;
 }
 
 @media (max-width: 1024px) {
@@ -58,4 +103,65 @@ html {
     background-size: cover;
     background-attachment: scroll;
   }
+}
+
+/* Scoped card color overrides for CameraPage */
+.image-card {
+  background: linear-gradient(180deg,#28582f 0%,#15361a 100%);
+  color: #ffffff;
+  box-shadow: inset 0 -10px 30px rgba(0,0,0,0.35);
+  border-radius: 12px;
+  overflow: visible;
+}
+
+.image-card .bg-amber-100 {
+  background-color: #e6f7a8 !important;
+  color: #15361a !important;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.image-card .bg-amber-100 p,
+.image-card .bg-amber-100 * {
+  color: #15361a !important;
+}
+
+.image-card .secondary-text {
+  color: #cfe7b0 !important;
+}
+
+.image-card .border-yellow-200\/50 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+.image-card button {
+  background: #e0f15a !important;
+  color: #0f2a10 !important;
+  border-color: transparent !important;
+}
+
+.image-card button:hover {
+  background: #d1e84a !important;
+  color: #071a06 !important;
+}
+
+/* Gradient text for 'Meal' */
+.meal-gradient {
+  background: linear-gradient(90deg, #556b2f 0%, #9bbf3a 50%, #c7e18a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Prevent gradient text from appearing cut off by making it an inline-block
+   and giving a small right padding so italic glyphs have room. */
+.meal-gradient {
+  display: inline-block;
+  padding-right: 0.4rem;
+  background-size: 160% 100%;
+}
+
+/* Optional subtle stroke to smooth edges on some browsers */
+.meal-gradient-stroke {
+  -webkit-text-stroke: 0.3px rgba(0,0,0,0.04);
 }

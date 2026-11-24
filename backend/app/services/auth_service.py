@@ -97,6 +97,10 @@ def verify_otp(db: Session, email: str, otp: str) -> dict:
     if not user:
         raise ValueError("No account found for this email.")
 
+    if user.locked_until and user.locked_until > datetime.utcnow():
+        remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+        raise ValueError(f"Account temporarily locked. Please try again in {remaining} minutes.")
+
     record = (
         db.query(OtpCode)
         .filter(OtpCode.email == email, OtpCode.purpose == "verify_email")
@@ -108,15 +112,20 @@ def verify_otp(db: Session, email: str, otp: str) -> dict:
     if record.expires_at < datetime.utcnow():
         raise ValueError("OTP expired. Request a new code.")
 
-    record.attempts += 1
-    if record.attempts > 5:
-        raise ValueError("Too many attempts. Request a new code.")
-
     if not is_otp_valid(otp, record.otp_hash):
+        record.attempts += 1
+        attempts_left = 5 - record.attempts
+        if record.attempts >= 5:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+            db.delete(record)
+            db.commit()
+            raise ValueError("Too many failed attempts. Please request a new OTP.")
         db.commit()
-        raise ValueError("Invalid OTP.")
+        raise ValueError(f"Invalid OTP. {attempts_left} attempts remaining.")
 
     user.is_verified = True
+    user.failed_login_attempts = 0
+    user.locked_until = None
     db.delete(record)
     db.commit()
     token = create_access_token(user.email)
@@ -125,12 +134,88 @@ def verify_otp(db: Session, email: str, otp: str) -> dict:
 
 def login_user(db: Session, email: str, password: str) -> dict:
     user = db.query(User).filter(User.email == email).one_or_none()
-    if not user or not verify_password(password, user.hashed_password):
+    if not user:
         raise ValueError("Invalid email or password.")
+
+    if user.locked_until and user.locked_until > datetime.utcnow():
+        remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+        raise ValueError(f"Account temporarily locked. Please try again in {remaining} minutes.")
+
+    if not verify_password(password, user.hashed_password):
+        user.failed_login_attempts += 1
+        attempts_left = 5 - user.failed_login_attempts
+        if user.failed_login_attempts >= 5:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+            user.failed_login_attempts = 0
+            db.commit()
+            raise ValueError("Too many failed login attempts. Account locked for 10 minutes.")
+        db.commit()
+        raise ValueError(f"Invalid email or password. {attempts_left} attempts remaining.")
 
     if not user.is_verified:
         _store_otp(db, email)
         raise ValueError("Account is not verified. A new OTP was sent to your email.")
 
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.commit()
     token = create_access_token(user.email)
     return {"access_token": token, "token_type": "bearer", "user": {"email": user.email, "first_name": user.first_name, "last_name": user.last_name}}
+
+
+def change_user_password(db: Session, user: User, current_password: str, new_password: str) -> None:
+    if not verify_password(current_password, user.hashed_password):
+        raise ValueError("Incorrect current password.")
+    user.hashed_password = hash_password(new_password)
+    db.commit()
+
+
+def request_forgot_password_otp(db: Session, email: str) -> dict:
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user:
+        raise ValueError("No account found for this email.")
+
+    _, delivery_method = _store_otp(db, email, purpose="reset_password")
+    return {"message": "OTP sent to your email.", "otp_delivery": delivery_method}
+
+
+def reset_password_with_otp(db: Session, email: str, otp: str, new_password: str) -> dict:
+    user = db.query(User).filter(User.email == email).one_or_none()
+    if not user:
+        raise ValueError("No account found for this email.")
+
+    if user.locked_until and user.locked_until > datetime.utcnow():
+        remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+        raise ValueError(f"Account temporarily locked. Please try again in {remaining} minutes.")
+
+    record = (
+        db.query(OtpCode)
+        .filter(OtpCode.email == email, OtpCode.purpose == "reset_password")
+        .one_or_none()
+    )
+    if not record:
+        raise ValueError("OTP not found. Request a new code.")
+
+    if record.expires_at < datetime.utcnow():
+        raise ValueError("OTP expired. Request a new code.")
+
+    if not is_otp_valid(otp, record.otp_hash):
+        record.attempts += 1
+        attempts_left = 5 - record.attempts
+        if record.attempts >= 5:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=10)
+            db.delete(record)
+            db.commit()
+            raise ValueError("Too many failed attempts. Please request a new OTP.")
+        db.commit()
+        raise ValueError(f"Invalid OTP. {attempts_left} attempts remaining.")
+
+    user.hashed_password = hash_password(new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.delete(record)
+    db.commit()
+    return {"message": "Password reset successfully. Please sign in with your new password."}
+
+
+

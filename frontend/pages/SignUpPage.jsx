@@ -15,20 +15,28 @@ export default function NutriSnapRegister() {
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.14/dist/dotlottie-wc.js";
-    script.type = "module";
-    document.head.appendChild(script);
-    setTimeout(() => setLoaded(true), 100);
-    return () => document.head.removeChild(script);
+    setLoaded(true);
   }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const nameRegex = /^[a-zA-Z\s\-']+$/;
+    if (!nameRegex.test(form.firstName)) {
+      window.alert("First name must only contain letters, spaces, hyphens, or apostrophes.");
+      return;
+    }
+    if (!nameRegex.test(form.lastName)) {
+      window.alert("Last name must only contain letters, spaces, hyphens, or apostrophes.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -65,7 +73,6 @@ export default function NutriSnapRegister() {
   return (
     <div style={{ fontFamily: "'Poppins', sans-serif", minHeight: "100vh", display: "flex", background: "#ffffff", overflow: "hidden" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,600&family=Bebas+Neue&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         .rg-left {
@@ -199,8 +206,171 @@ export default function NutriSnapRegister() {
         .rg-login-link:hover { text-decoration: underline; }
 
         .rg-input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
-        .rg-input[type="date"] { color: #1a2e08; } border: 2px solid rgba(201,216,74,0.4); border-top-color: #c9d84a; border-radius: 50%; animation: rg-spin 0.7s linear infinite; display: inline-block; margin-right: 8px; vertical-align: middle; }
+        .rg-input[type="date"] { color: #1a2e08; }
+        .rg-spinner {
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(201, 216, 74, 0.4);
+          border-top-color: #c9d84a;
+          border-radius: 50%;
+          animation: rg-spin 0.7s linear infinite;
+          display: inline-block;
+          margin-right: 8px;
+          vertical-align: middle;
+        }
         @keyframes rg-spin { to { transform: rotate(360deg); } }
+
+        /* Terms and Privacy Modals Styles */
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(15, 32, 10, 0.45);
+          backdrop-filter: blur(12px);
+          animation: modalFadeIn 0.3s ease forwards;
+        }
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .modal-card {
+          background: linear-gradient(135deg, #ffffff 0%, #f9fbf7 100%);
+          border: 1px solid rgba(74, 124, 47, 0.15);
+          border-radius: 28px;
+          padding: 40px 36px 32px;
+          width: 100%;
+          max-width: 480px;
+          box-shadow: 0 32px 80px rgba(22, 63, 34, 0.22);
+          display: flex;
+          flex-direction: column;
+          font-family: 'Poppins', sans-serif;
+          position: relative;
+          text-align: left;
+          animation: modalSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes modalSlideUp {
+          from { opacity: 0; transform: translateY(30px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-title {
+          font-family: 'Poppins', sans-serif;
+          font-size: 24px;
+          font-weight: 800;
+          line-height: 1.25;
+          margin-bottom: 4px;
+          background: linear-gradient(135deg, #163f22 0%, #4a7c2f 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .modal-subtitle {
+          font-size: 10px;
+          font-weight: 700;
+          color: #7ba367;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          margin-bottom: 24px;
+        }
+
+        .modal-body {
+          max-height: 280px;
+          overflow-y: auto;
+          padding-right: 12px;
+          margin-bottom: 28px;
+        }
+        
+        /* Modern Scrollbar Styling */
+        .modal-body::-webkit-scrollbar {
+          width: 6px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.03);
+          border-radius: 99px;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+          background: #7ba367;
+          border-radius: 99px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+          background: #4a7c2f;
+        }
+
+        .modal-section {
+          background: rgba(242, 247, 238, 0.5);
+          border: 1px solid rgba(123, 163, 103, 0.12);
+          border-radius: 16px;
+          padding: 16px;
+          margin-bottom: 12px;
+          transition: all 0.25s ease;
+        }
+        .modal-section:hover {
+          background: rgba(242, 247, 238, 0.85);
+          border-color: rgba(74, 124, 47, 0.25);
+          transform: translateY(-1px);
+        }
+
+        .modal-section-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+
+        .modal-section-badge {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #4a7c2f;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .modal-section-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: #1a2e08;
+        }
+
+        .modal-section-text {
+          font-size: 12px;
+          line-height: 1.6;
+          color: #4b5563;
+        }
+
+        .modal-btn-close {
+          width: 100%;
+          padding: 14px;
+          background: linear-gradient(135deg, #4a7c2f 0%, #2d5016 100%);
+          color: #c9d84a;
+          border: none;
+          border-radius: 16px;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          box-shadow: 0 8px 24px rgba(74, 124, 47, 0.25);
+          text-align: center;
+        }
+        .modal-btn-close:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 30px rgba(74, 124, 47, 0.35);
+        }
+        .modal-btn-close:active {
+          transform: translateY(0);
+        }
 
         @media (max-width: 768px) {
           .rg-left { display: none; }
@@ -222,9 +392,6 @@ export default function NutriSnapRegister() {
             autoplay loop
           />
         </div>
-        <div className="rg-footer">
-          Track your meals, <strong>discover nutrition</strong>, and reach your <strong>health goals.</strong>
-        </div>
       </div>
 
       {/* RIGHT PANEL */}
@@ -234,7 +401,7 @@ export default function NutriSnapRegister() {
 
           <div className="rg-eyebrow">Get started free</div>
           <h1 className="rg-title">Create your<br /><em>NutriSnap</em> account</h1>
-          <p className="rg-subtitle">Join thousands already tracking smarter. It only takes a minute.</p>
+          <p className="rg-subtitle">Create your account in a minute.</p>
 
           <form onSubmit={handleSubmit}>
             {/* Name row */}
@@ -246,7 +413,10 @@ export default function NutriSnapRegister() {
                   placeholder="Juan" value={form.firstName}
                   onChange={handleChange}
                   onFocus={() => setFocused("firstName")}
-                  onBlur={() => setFocused(null)} required
+                  onBlur={() => setFocused(null)} 
+                  pattern="^[a-zA-Z\s\-']+$"
+                  title="First name must only contain letters, spaces, hyphens, or apostrophes."
+                  required
                 />
               </div>
               <div className="rg-group">
@@ -256,7 +426,10 @@ export default function NutriSnapRegister() {
                   placeholder="dela Cruz" value={form.lastName}
                   onChange={handleChange}
                   onFocus={() => setFocused("lastName")}
-                  onBlur={() => setFocused(null)} required
+                  onBlur={() => setFocused(null)} 
+                  pattern="^[a-zA-Z\s\-']+$"
+                  title="Last name must only contain letters, spaces, hyphens, or apostrophes."
+                  required
                 />
               </div>
             </div>
@@ -351,7 +524,26 @@ export default function NutriSnapRegister() {
                 )}
               </div>
               <span className="rg-terms-text">
-                I agree to the <span className="rg-terms-link">Terms of Service</span> and <span className="rg-terms-link">Privacy Policy</span>
+                I agree to the{" "}
+                <span
+                  className="rg-terms-link"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowTermsModal(true);
+                  }}
+                >
+                  Terms of Service
+                </span>{" "}
+                and{" "}
+                <span
+                  className="rg-terms-link"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPrivacyModal(true);
+                  }}
+                >
+                  Privacy Policy
+                </span>
               </span>
             </div>
 
@@ -362,24 +554,6 @@ export default function NutriSnapRegister() {
               ) : "Create Account"}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="rg-divider">
-            <div className="rg-divider-line" />
-            <span className="rg-divider-text">OR</span>
-            <div className="rg-divider-line" />
-          </div>
-
-          {/* Google */}
-          <button className="rg-google">
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
-              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-              <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
-              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/>
-            </svg>
-            Sign up with Google
-          </button>
 
           <div className="rg-login-row">
             Already have an account?{" "}
@@ -394,6 +568,104 @@ export default function NutriSnapRegister() {
         onVerified={() => navigate("/login", { state: { email: form.email, verified: true } })}
         onClose={() => setOtpModalOpen(false)}
       />
+
+      {/* Terms of Service Modal */}
+      {showTermsModal && (
+        <div className="modal-overlay" onClick={() => setShowTermsModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">Terms of Service</h3>
+            <p className="modal-subtitle">NutriSnap User Agreement</p>
+            
+            <div className="modal-body">
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">1</span>
+                  <h4 className="modal-section-title">Accuracy of AI Analysis</h4>
+                </div>
+                <p className="modal-section-text">
+                  NutriSnap uses advanced ensemble models (including YOLOv11 and Gemini AI) to estimate meal portion sizes and nutritional values. These are statistical approximations. Do not rely on them as absolute values.
+                </p>
+              </div>
+
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">2</span>
+                  <h4 className="modal-section-title">Medical Advice Disclaimer</h4>
+                </div>
+                <p className="modal-section-text">
+                  All content, estimates, and calculations provided by NutriSnap are for informational purposes only. We do not provide medical advice. Consult a qualified doctor or registered dietitian before starting any diet or exercise program.
+                </p>
+              </div>
+
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">3</span>
+                  <h4 className="modal-section-title">Accountability</h4>
+                </div>
+                <p className="modal-section-text">
+                  You agree to use this application responsibly and input accurate metrics for goal estimations.
+                </p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowTermsModal(false)}
+              className="modal-btn-close"
+            >
+              Got it, Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="modal-overlay" onClick={() => setShowPrivacyModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">Privacy Policy</h3>
+            <p className="modal-subtitle">How We Handle Your Data</p>
+            
+            <div className="modal-body">
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">1</span>
+                  <h4 className="modal-section-title">Physical Metrics & Goals</h4>
+                </div>
+                <p className="modal-section-text">
+                  We collect and process user parameters (weight, height, age, sex) solely to calculate BMR, TDEE, and daily nutrition targets.
+                </p>
+              </div>
+
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">2</span>
+                  <h4 className="modal-section-title">Photo Processing</h4>
+                </div>
+                <p className="modal-section-text">
+                  Uploaded food images are securely sent to our backend APIs (Roboflow, Clarifai, and Google Gemini) to identify dishes and estimate portions. Images are processed live and are not stored permanently or shared with third-party advertisers.
+                </p>
+              </div>
+
+              <div className="modal-section">
+                <div className="modal-section-header">
+                  <span className="modal-section-badge">3</span>
+                  <h4 className="modal-section-title">Security</h4>
+                </div>
+                <p className="modal-section-text">
+                  Your passwords are salted and hashed. We implement rate-limiting to protect account access security.
+                </p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setShowPrivacyModal(false)}
+              className="modal-btn-close"
+            >
+              Got it, Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

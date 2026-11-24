@@ -1,5 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { analyzeImage } from '../services/api'
+import { compressImage } from '../utils/imageQuality'
+import { scanBarcodeFromImage, getNutritionByBarcode } from '../utils/barcodeScanner'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
@@ -12,6 +15,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 
 export function useUploadFlow() {
 	const fileInputRef = useRef(null)
+	const navigate = useNavigate()
 
 	const [validationError, setValidationError] = useState(null)
 	const [previewData, setPreviewData] = useState(null)
@@ -45,7 +49,7 @@ export function useUploadFlow() {
 	}, [])
 
 	const processFile = useCallback(
-		(file) => {
+		async (file) => {
 			if (!file) {
 				return
 			}
@@ -59,13 +63,20 @@ export function useUploadFlow() {
 				return
 			}
 
+			let fileToProcess = file
+			try {
+				fileToProcess = await compressImage(file, 1024, 1024, 0.75)
+			} catch (compressErr) {
+				console.error('Compression failed, using original file:', compressErr)
+			}
+
 			// Convert the file into a previewable format
 			const reader = new FileReader()
 			reader.onload = (loadEvent) => {
 				setPreviewData({
 					src: loadEvent.target?.result,
-					fileName: file.name,
-					file: file,
+					fileName: fileToProcess.name,
+					file: fileToProcess,
 				})
 			}
 
@@ -74,7 +85,7 @@ export function useUploadFlow() {
 				setValidationError('Unable to read this file')
 			}
 
-			reader.readAsDataURL(file)
+			reader.readAsDataURL(fileToProcess)
 		},
 		[validateFile],
 	)
@@ -120,72 +131,74 @@ export function useUploadFlow() {
 		setValidationError(null)
 
 		try {
-			const analysisResponse = await analyzeImage(previewData.file, {
-				useGemini: true,
-			})
+			// Scan for barcode first
+			const barcode = await scanBarcodeFromImage(previewData.src)
+			if (barcode) {
+				const product = await getNutritionByBarcode(barcode)
+				if (product) {
+					// Map Open Food Facts data to standard format expected by Analysis Page
+					const mockResult = {
+						filename: previewData.fileName,
+						analysis_provider: "barcode+openfoodfacts",
+						top_prediction: product.name,
+						final_food_label: product.name,
+						ingredients: (product.ingredients || []).map(name => ({
+							name: name,
+							amount: 100,
+							unit: 'g',
+							calories: 0,
+							protein: 0,
+							carbs: 0,
+							fat: 0,
+							fiber: 0,
+							resolved: false,
+							source: 'pending'
+						})),
+						gemini: JSON.stringify({
+							dish_guess: product.name,
+							identified_foods: [{ name: product.name, confidence: "high" }],
+							nutrition_estimate: {
+								calories_kcal: product.calories,
+								protein_g: product.protein,
+								carbs_g: product.carbs,
+								fat_g: product.fat
+							},
+							portion_size: { text: product.serving_size, grams: 100 }
+						}, null, 2),
+						geminiNutrition: `Calories: ${product.calories} kcal\nProtein: ${product.protein} g\nCarbs: ${product.carbs} g\nFat: ${product.fat} g`
+					}
 
-			if (!analysisResponse.ok) {
-				setValidationError(analysisResponse.error)
-				return
-			}
+					setAnalysisResult({
+						type: 'success',
+						src: previewData.src,
+						title: 'Barcode Scan Complete',
+						description: `${product.brand} - ${product.name}`,
+						gemini: mockResult.gemini,
+						geminiNutrition: mockResult.geminiNutrition,
+						clarifai: `Product brand: ${product.brand}\nServing size: ${product.serving_size}\nSodium: ${product.sodium} mg\nSugar: ${product.sugar} g`,
+					})
 
-			const analysisResult = analysisResponse.data
-
-			// Parse Gemini insights
-			const geminiInsights = analysisResult.gemini?.insights
-			let geminiText = null
-			if (geminiInsights !== null && geminiInsights !== undefined) {
-				if (typeof geminiInsights === 'string') {
-					geminiText = geminiInsights
-				} else {
-					geminiText = JSON.stringify(geminiInsights, null, 2)
+					navigate('/analysis', {
+						state: {
+							analysisData: mockResult,
+							previewSrc: previewData.src,
+							fileName: previewData.fileName,
+						},
+					})
+					setPreviewData(null)
+					setIsAnalyzing(false)
+					return
 				}
 			}
 
-			// Parse Clarifai data
-			let clarifaiText = null
-			if (Array.isArray(analysisResult.foods) && analysisResult.foods.length > 0) {
-				const formattedFoods = analysisResult.foods
-					.map((food) => {
-						if (!food || typeof food !== 'object') {
-							return null
-						}
-
-						const foodName = typeof food.name === 'string' && food.name.trim().length > 0 ? food.name : 'Unknown'
-						const confidenceValue = Number(food.confidence)
-
-						if (Number.isFinite(confidenceValue)) {
-							return `${foodName} (${(confidenceValue * 100).toFixed(1)}%)`
-						}
-
-						return foodName
-					})
-					.filter(Boolean)
-
-				const modelUrlText =
-					typeof analysisResult.clarifai_model_url === 'string' && analysisResult.clarifai_model_url.trim().length > 0
-						? `Model: ${analysisResult.clarifai_model_url}`
-						: null
-
-				clarifaiText = [
-					modelUrlText,
-					`Detected foods: ${formattedFoods.join(', ')}`,
-				]
-					.filter(Boolean)
-					.join('\n')
-			} else if (typeof analysisResult.clarifai_error === 'string' && analysisResult.clarifai_error.trim().length > 0) {
-				clarifaiText = `Clarifai error: ${analysisResult.clarifai_error}`
-			} else {
-				clarifaiText = 'No Clarifai foods detected for this image.'
-			}
-
-			setAnalysisResult({
-				type: 'success',
-				src: previewData.src,
-				title: 'AI Analysis Complete',
-				description: previewData.fileName,
-				gemini: geminiText,
-				clarifai: clarifaiText,
+			// Navigate to analysis page immediately to render the skeleton loader
+			navigate('/analysis', {
+				state: {
+					isAnalyzing: true,
+					previewSrc: previewData.src,
+					fileName: previewData.fileName,
+					rawFile: previewData.file,
+				},
 			})
 			setPreviewData(null)
 		} catch (error) {
@@ -194,7 +207,7 @@ export function useUploadFlow() {
 		} finally {
 			setIsAnalyzing(false)
 		}
-	}, [previewData, validateFile])
+	}, [navigate, previewData, validateFile])
 
 	// Clear all states
 	const reset = useCallback(() => {

@@ -120,7 +120,16 @@ export default function AnalysisResultModal({ result, onAnalyzeAnother, onClose 
 					</p>
 				</div>
 
-				<div ref={setContentRef(2)} className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
+				{result.geminiNutrition ? (
+					<div ref={setContentRef(2)} className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
+						<p className="text-xs uppercase tracking-[0.12em] text-[var(--brand-primary)]">Gemini Nutrition</p>
+						<p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+							{result.geminiNutrition}
+						</p>
+					</div>
+				) : null}
+
+				<div ref={setContentRef(3)} className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
 					<p className="text-xs uppercase tracking-[0.12em] text-[var(--brand-secondary)]">Clarifai</p>
 					<p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
 						{result.clarifai || 'No Clarifai details returned.'}

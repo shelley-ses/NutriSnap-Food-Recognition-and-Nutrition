@@ -7,3 +7,7 @@ passlib[bcrypt]
 pydantic[email]
 python-dotenv
 email-validator
+argon2-cffi
+ultralytics
+clarifai
+

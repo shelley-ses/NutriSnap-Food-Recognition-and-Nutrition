@@ -67,7 +67,7 @@ export default function ImageCard({ image, badge, title, description, buttonIcon
                 transformPerspective: 900,
                 transformStyle: 'preserve-3d',
             }}
-            className="relative overflow-hidden bg-highlight w-full max-w-85 p-8 text-white flex flex-col items-start gap-6 rounded-3xl"
+            className="relative bg-highlight w-full max-w-85 p-8 text-white flex flex-col items-start gap-6 rounded-xl image-card"
         >
             <Motion.div
                 aria-hidden="true"

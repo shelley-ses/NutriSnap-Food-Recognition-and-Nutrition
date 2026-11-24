@@ -2,6 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -43,3 +44,18 @@ export function verifyOtp(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function requestForgotPasswordOtp(email) {
+  return requestJson("/auth/forgot-password/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPasswordWithOtp(email, otp, newPassword) {
+  return requestJson("/auth/forgot-password/reset", {
+    method: "POST",
+    body: JSON.stringify({ email, otp, new_password: newPassword }),
+  });
+}
+
